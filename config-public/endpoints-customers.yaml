@@ -1,19 +1,48 @@
-# Customer-facing services.
+# Customer-facing services, grouped by client. Production and development sit
+# together in each group so a client sees both of its environments in one place.
 #
-# Conditions assert on the BODY, not just the status code. That is deliberate
-# and it is the whole reason this file is trustworthy: every name under
-# seedaps.com resolves and answers, because the zone carries a wildcard
-# (*.seedaps.com -> an unrelated Azure App Service). A `[STATUS] == 200` check
-# therefore stays green even for a hostname that does not exist. Asserting
-# `[BODY] == Healthy` is what distinguishes a live service from the wildcard.
+# Group order on the page is alphabetical: CSN-PR, CSN-UPV, Seed, Shared
+# platform. The platform group is named to sort last on purpose.
 #
-# Verified 2026-09-11: two invented hostnames (nonexistent-xyz123.seedaps.com
-# and definitely-not-real-9987.seedaps.com) returned the same 200 and the same
-# /api/health 401 as the real ones. Do not relax these conditions to [STATUS].
+# CONDITIONS ASSERT ON THE BODY, NOT JUST THE STATUS CODE. This is the rule that
+# makes this file trustworthy. Every name under seedaps.com resolves and answers
+# 200 because the zone carries a wildcard pointing at an unrelated Azure App
+# Service, so `[STATUS] == 200` stays green for a hostname that does not exist.
+# Verified 2026-09-11: a check for status.seedaps.com passed a status-only
+# condition before that hostname had any DNS record. `[BODY] == Healthy` is what
+# the wildcard cannot fake. Do not relax these.
+
+announcements:
+  - timestamp: 2026-09-11T19:00:00Z
+    type: information
+    message: >-
+      This page reports the live health of Seed APS customer environments. Each
+      client shows its production and development environments; a green
+      indicator means the service answered an end-to-end request correctly,
+      checked every 60 seconds for production and every 5 minutes for
+      development.
 
 endpoints:
-  # ---------------------------------------------------------------- CSN-UPV
-  - name: CSN-UPV
+  # ================================================================= CSN-PR
+  - name: Portal
+    group: CSN-PR
+    url: "https://csnpr.coortex.com/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: Portal (dev)
+    group: CSN-PR
+    url: "https://csnpr.dev.coortex.com/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+
+  # ================================================================ CSN-UPV
+  - name: Portal
     group: CSN-UPV
     url: "https://csnupv.coortex.com/health"
     interval: 60s
@@ -22,7 +51,15 @@ endpoints:
       - "[BODY] == Healthy"
       - "[CERTIFICATE_EXPIRATION] > 168h"
 
-  - name: CSN-UPV planejamento
+  - name: Portal (dev)
+    group: CSN-UPV
+    url: "https://csnupv.dev.coortex.com/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+
+  - name: Planejamento
     group: CSN-UPV
     url: "https://planejamento.csn.seedaps.com/health"
     interval: 60s
@@ -31,7 +68,7 @@ endpoints:
       - "[BODY] == Healthy"
       - "[CERTIFICATE_EXPIRATION] > 168h"
 
-  - name: CSN-UPV planejamento (dev)
+  - name: Planejamento (dev)
     group: CSN-UPV
     url: "https://planejamento.csn.dev.seedaps.com/health"
     interval: 5m
@@ -39,16 +76,7 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY] == Healthy"
 
-  # ---------------------------------------------------------------- CSN-PR
-  #
-  # CSN-PR has NO directly monitorable endpoint. Both of its URLs
-  # (csnpr.seedaps.com and csnpr.api.seedaps.com) serve the shared ASP.NET
-  # login SPA and are byte-for-byte indistinguishable from a hostname that does
-  # not exist. Until that application exposes an unauthenticated per-tenant
-  # health endpoint, CSN-PR is covered only by the "Seed application platform"
-  # check below — which detects a platform outage, not a CSN-PR outage.
-
-  # ---------------------------------------------------------------- Seed
+  # =================================================================== Seed
   - name: Tutorial Mesas
     group: Seed
     url: "https://tutorial-mesas.coortex.com/health"
@@ -66,18 +94,23 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY] == Healthy"
 
-  # ---------------------------------------------------------------- platform
+  # ======================================================== Shared platform
   #
   # The shared Azure App Service behind csnupv.seedaps.com,
   # csnupv.api.seedaps.com, csnpr.seedaps.com, csnpr.api.seedaps.com and
   # tutorial-mesas.seedaps.com. Its /api/health answers 401 when the API tier is
-  # alive, which is enough to catch a 502/503 outage. It cannot distinguish one
-  # tenant from another, so it is listed once and named for what it is.
+  # alive, which catches a 502/503 outage.
+  #
+  # It CANNOT distinguish one tenant from another. Eighteen paths were compared
+  # against a control hostname on 2026-09-11 -- including /favicon.ico and
+  # /robots.txt -- and every one was byte-identical. So it is listed once, named
+  # for what it actually covers, rather than as five per-tenant lights that
+  # would stay green if a tenant vanished.
   #
   # Conditions are hidden in the UI because "expects 401" reads as a fault to
   # anyone who does not know the above.
-  - name: Seed application platform
-    group: Platform
+  - name: Login portal
+    group: Shared platform
     url: "https://csnupv.seedaps.com/api/health"
     interval: 60s
     conditions:
