@@ -21,13 +21,6 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY].status == ok"
 
-  - name: excel-to-report
-    group: public
-    url: "https://excel-to-report.seedaps.com/"
-    interval: 5m
-    conditions:
-      - "[STATUS] == 200"
-
   - name: gatus (this page, via the tunnel)
     group: public
     url: "https://uptime.seedaps.com/health"

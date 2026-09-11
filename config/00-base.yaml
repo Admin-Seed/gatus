@@ -13,10 +13,7 @@ storage:
 # good configuration instead of falling over.
 skip-invalid-config-update: true
 
-ui:
-  title: "Status | seed infrastructure"
-  description: "Health of the services on seed-vm-services-eastus"
-  header: "seed infrastructure"
+# The `ui:` block lives in 01-ui.yaml.
 
 # Protects the status data (/api/v1/endpoints/statuses and friends).
 # Badges and the raw uptime/response-time endpoints stay public by design.

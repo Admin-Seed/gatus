@@ -37,9 +37,36 @@ scratch`: a static binary, a CA bundle, a default config. No shell, no `wget`.
 Any `healthcheck:` fails to exec and reports unhealthy forever. Gatus watches its
 own `/health` instead.
 
+## Branding
+
+`config/01-ui.yaml` holds the whole `ui:` block — title, headings, the Seed APS
+logo and the theme. Everything under `ui:` is kept in that one file so nothing
+depends on how Gatus deep-merges a *map* across files; only distinct top-level
+keys are relied on.
+
+The logo is inlined as a `data:` URI rather than hot-linked. It is 17 KB, so the
+cost is ~23 KB of base64 in the file, and in exchange the status page has no
+third-party dependency on every load, leaks no visitor IPs to `seed.com.br`, and
+still renders correctly if `seed.com.br` is itself the thing that is down.
+
+Three things to know before editing `custom-css`:
+
+- **Gatus is shadcn-themed.** Every colour resolves through HSL custom
+  properties — `.bg-background{background-color:hsl(var(--background))}` — so
+  re-theming means overriding ~20 variables, not chasing utility classes.
+- **`/css/custom.css` is linked _before_ `/css/app.css`.** A plain `:root`
+  (specificity 0,1,0) ties with app.css's own `:root` and loses on source order.
+  The selectors here are doubled (`:root:root`, 0,2,0) for that reason.
+- **There is no theme toggle in the UI.** The visitor's `prefers-color-scheme`
+  alone decides. The Seed wordmark is solid white, so the same palette is
+  applied to `:root` *and* `.dark` — every visitor gets the same legible page.
+
+The logo also ships inside a 48x48 box (`w-12 h-12`) with `object-contain`,
+which renders a 1080x509 wordmark at 48x23. The CSS releases that box.
+
 ## Secrets
 
-`GATUS_BASIC_AUTH_B64` — base64 of a bcrypt hash, protecting the dashboard's
+`GATUS_BASIC_AUTH_B64` — base64 of a bcrypt hash (cost 9), protecting the dashboard's
 status data. It is supplied by the Komodo stack environment and is **not** in
 this repository. Badge and raw uptime/response-time endpoints are unauthenticated
 by design in Gatus, so treat endpoint *names* as public.

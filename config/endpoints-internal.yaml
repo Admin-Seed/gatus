@@ -28,10 +28,3 @@ endpoints:
     interval: 60s
     conditions:
       - "[STATUS] == 200"
-
-  - name: excel-to-report (direct)
-    group: internal
-    url: "http://host.docker.internal:9022/"
-    interval: 5m
-    conditions:
-      - "[STATUS] == 200"
