@@ -20,7 +20,7 @@ public or wholly behind auth. So there are two stacks, from this one repository:
 | | Internal | Public |
 | --- | --- | --- |
 | Compose | `compose.yaml` | `compose.public.yaml` |
-| Config | `config/` | `config-public/` |
+| Config | `config/` | `config-public/` (mounted as `/repo/config-public`) |
 | Host port | `3001` | `3002` |
 | URL | <https://uptime.seedaps.com> | <https://status.seedaps.com> |
 | Auth | basic auth | **none — customers read this** |
@@ -29,11 +29,19 @@ public or wholly behind auth. So there are two stacks, from this one repository:
 **Anything you put in `config-public/` is public.** No hostnames, ports or
 service names that you would not hand to a customer.
 
-Branding is not duplicated: `compose.public.yaml` bind-mounts
-`config/01-ui.yaml` over the placeholder at `config-public/01-ui.yaml`, so the
-logo and theme have one source. The placeholder must stay committed — `/config`
-is mounted read-only, so Docker cannot create the mountpoint itself. If the
-public board ever renders unbranded, that mount is what failed.
+Branding is not duplicated. `config-public/01-ui.yaml` is a **git symlink** to
+`../config/01-ui.yaml`, and `compose.public.yaml` mounts the **whole repository**
+read-only at `/repo` with `GATUS_CONFIG_PATH=/repo/config-public`. A relative
+symlink only resolves if both directories sit inside the same mount, which is
+why the mount is the repo root rather than a single directory.
+
+**Do not "simplify" this into a single-file bind mount.** It was written that
+way first — `./config-public:/config` plus `./config/01-ui.yaml:/config/01-ui.yaml`
+— and it silently broke on the next deploy. A single-file bind mount binds an
+*inode*, and `git pull` replaces files rather than editing them in place, so the
+container carried on serving the original file forever. The symptom is precise
+and easy to miss: directory-mounted endpoint files update normally while the
+branding stays frozen at whatever it was when the container started.
 
 ## Write conditions against the body, not the status
 

@@ -1,9 +1,1 @@
-# PLACEHOLDER - intentionally almost empty.
-#
-# compose.public.yaml bind-mounts ../config/01-ui.yaml over this file, so the
-# public board shares exactly one branding definition with the internal board
-# and the logo is not duplicated. The mount needs this file to already exist:
-# /config is mounted read-only, so Docker cannot create the mountpoint itself.
-#
-# If you ever see the unbranded default dashboard, this placeholder is what is
-# being read, which means the bind mount did not happen.
+../config/01-ui.yaml

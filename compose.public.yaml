@@ -22,15 +22,26 @@ services:
     # instance instead.
 
     environment:
-      GATUS_CONFIG_PATH: /config
+      # Points into the read-only repo mount below, NOT at a /config bind.
+      GATUS_CONFIG_PATH: /repo/config-public
       GATUS_LOG_LEVEL: INFO
 
     ports:
       - "3002:8080"
 
     volumes:
-      - ./config-public:/config:ro
-      - ./config/01-ui.yaml:/config/01-ui.yaml:ro
+      # The whole repository, read-only. Deliberate: config-public/01-ui.yaml is
+      # a symlink to ../config/01-ui.yaml so branding has one source, and a
+      # relative symlink only resolves if both directories are inside the SAME
+      # mount.
+      #
+      # Do not "simplify" this back to `./config-public:/config` plus a
+      # single-file mount of ../config/01-ui.yaml. A single-file bind mount
+      # binds an inode, and `git pull` replaces files rather than editing them
+      # in place, so the container silently keeps serving the old branding while
+      # the directory-mounted endpoint files update normally. That was observed
+      # here on 2026-09-11.
+      - .:/repo:ro
       - gatus-public-data:/data
 
     security_opt:
