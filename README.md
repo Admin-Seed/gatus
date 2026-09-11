@@ -12,6 +12,53 @@ Deployed by Komodo as the stack `gatus`. It replaced Uptime Kuma on 2026-09-11.
 | VNet | `http://172.17.0.4:3001` — `netsh portproxy` |
 | Image | `ghcr.io/twin/gatus:v5.36.0` |
 
+## Two instances, two audiences
+
+Gatus has **no per-endpoint visibility control** — a dashboard is either wholly
+public or wholly behind auth. So there are two stacks, from this one repository:
+
+| | Internal | Public |
+| --- | --- | --- |
+| Compose | `compose.yaml` | `compose.public.yaml` |
+| Config | `config/` | `config-public/` |
+| Host port | `3001` | `3002` |
+| URL | <https://uptime.seedaps.com> | <https://status.seedaps.com> |
+| Auth | basic auth | **none — customers read this** |
+| Contents | infrastructure, hosts, ports | customer-facing services only |
+
+**Anything you put in `config-public/` is public.** No hostnames, ports or
+service names that you would not hand to a customer.
+
+Branding is not duplicated: `compose.public.yaml` bind-mounts
+`config/01-ui.yaml` over the placeholder at `config-public/01-ui.yaml`, so the
+logo and theme have one source. The placeholder must stay committed — `/config`
+is mounted read-only, so Docker cannot create the mountpoint itself. If the
+public board ever renders unbranded, that mount is what failed.
+
+## Write conditions against the body, not the status
+
+The single most important rule in this repository.
+
+The `seedaps.com` zone carries a wildcard, `*.seedaps.com` pointing at an
+unrelated Azure App Service. **Every name under it resolves and answers `200`,**
+whether or not the tunnel routes it — so `[STATUS] == 200` proves nothing.
+
+This is not theoretical. On 2026-09-11 the check for `status.seedaps.com`
+passed a status-only condition **before its DNS record or ingress rule
+existed**. Two invented hostnames returned the same `200`, and the same
+`401 {"Message": ""}` on `/api/health`, as the real ones.
+
+So:
+
+```yaml
+conditions:
+  - "[STATUS] == 200"
+  - "[BODY] == Healthy"        # or [BODY].status == UP for Gatus's own /health
+```
+
+The body is the part the wildcard cannot fake. A check that asserts only on the
+status code is a green light wired to nothing.
+
 ## Adding or changing a monitor
 
 Edit a file under `config/`, commit, push. Komodo redeploys, and Gatus reloads

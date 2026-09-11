@@ -1,0 +1,43 @@
+# Infrastructure checks for the INTERNAL board only. Nothing here belongs on the
+# public status page.
+
+endpoints:
+  # Azure SQL — the WebJob's production database.
+  #
+  # Gatus has no database endpoint type, so this is a TLS handshake against the
+  # Azure SQL gateway. Be honest about what it proves:
+  #
+  #   it DOES     detect the gateway being unreachable, DNS failure, and an
+  #               expiring certificate;
+  #   it does NOT prove the database is online, that it is not paused, that
+  #               there is DTU headroom, or that any credential still works.
+  #
+  # Real database health belongs in an Azure Monitor metric alert (F-001,
+  # F-039). No credential appears here — this repository is public.
+  - name: Azure SQL gateway (seedwebsql)
+    group: infrastructure
+    url: "tls://seedwebsql.database.windows.net:1433"
+    interval: 5m
+    conditions:
+      - "[CONNECTED] == true"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  # The public status page, watched from the internal board. The public board
+  # cannot usefully watch itself.
+  - name: gatus-public (status page)
+    group: internal
+    url: "http://host.docker.internal:3002/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+
+  # Same wildcard trap as uptime.seedaps.com above — assert on the body.
+  # Verified: this endpoint passed a status-only condition before the DNS record
+  # and ingress rule for status.seedaps.com existed at all.
+  - name: status page (via the tunnel)
+    group: public
+    url: "https://status.seedaps.com/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == UP"

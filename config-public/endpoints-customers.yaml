@@ -1,0 +1,88 @@
+# Customer-facing services.
+#
+# Conditions assert on the BODY, not just the status code. That is deliberate
+# and it is the whole reason this file is trustworthy: every name under
+# seedaps.com resolves and answers, because the zone carries a wildcard
+# (*.seedaps.com -> an unrelated Azure App Service). A `[STATUS] == 200` check
+# therefore stays green even for a hostname that does not exist. Asserting
+# `[BODY] == Healthy` is what distinguishes a live service from the wildcard.
+#
+# Verified 2026-09-11: two invented hostnames (nonexistent-xyz123.seedaps.com
+# and definitely-not-real-9987.seedaps.com) returned the same 200 and the same
+# /api/health 401 as the real ones. Do not relax these conditions to [STATUS].
+
+endpoints:
+  # ---------------------------------------------------------------- CSN-UPV
+  - name: CSN-UPV
+    group: CSN-UPV
+    url: "https://csnupv.coortex.com/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: CSN-UPV planejamento
+    group: CSN-UPV
+    url: "https://planejamento.csn.seedaps.com/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: CSN-UPV planejamento (dev)
+    group: CSN-UPV
+    url: "https://planejamento.csn.dev.seedaps.com/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+
+  # ---------------------------------------------------------------- CSN-PR
+  #
+  # CSN-PR has NO directly monitorable endpoint. Both of its URLs
+  # (csnpr.seedaps.com and csnpr.api.seedaps.com) serve the shared ASP.NET
+  # login SPA and are byte-for-byte indistinguishable from a hostname that does
+  # not exist. Until that application exposes an unauthenticated per-tenant
+  # health endpoint, CSN-PR is covered only by the "Seed application platform"
+  # check below — which detects a platform outage, not a CSN-PR outage.
+
+  # ---------------------------------------------------------------- Seed
+  - name: Tutorial Mesas
+    group: Seed
+    url: "https://tutorial-mesas.coortex.com/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: Tutorial Mesas (dev)
+    group: Seed
+    url: "https://tutorial-mesas.dev.coortex.com/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+
+  # ---------------------------------------------------------------- platform
+  #
+  # The shared Azure App Service behind csnupv.seedaps.com,
+  # csnupv.api.seedaps.com, csnpr.seedaps.com, csnpr.api.seedaps.com and
+  # tutorial-mesas.seedaps.com. Its /api/health answers 401 when the API tier is
+  # alive, which is enough to catch a 502/503 outage. It cannot distinguish one
+  # tenant from another, so it is listed once and named for what it is.
+  #
+  # Conditions are hidden in the UI because "expects 401" reads as a fault to
+  # anyone who does not know the above.
+  - name: Seed application platform
+    group: Platform
+    url: "https://csnupv.seedaps.com/api/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 401"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+    ui:
+      hide-url: true
+      hide-conditions: true

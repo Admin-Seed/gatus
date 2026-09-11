@@ -21,9 +21,15 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY].status == ok"
 
+  # Asserts on the BODY, not just the status. The *.seedaps.com wildcard makes
+  # an unrouted hostname answer 200 from an unrelated Azure App Service, so a
+  # status-only condition here would stay green even if this tunnel rule were
+  # deleted. Gatus's own /health returns {"status":"UP"}, which the wildcard
+  # cannot produce.
   - name: gatus (this page, via the tunnel)
     group: public
     url: "https://uptime.seedaps.com/health"
     interval: 5m
     conditions:
       - "[STATUS] == 200"
+      - "[BODY].status == UP"
