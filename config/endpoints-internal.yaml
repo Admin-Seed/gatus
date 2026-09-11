@@ -1,0 +1,37 @@
+# Checks against services on the Docker host, bypassing Cloudflare. Comparing
+# these with the matching entry in endpoints-public.yaml separates "the service
+# is down" from "the tunnel is down".
+#
+# Deliberately HTTP, never tcp://. netsh portproxy completes the TCP handshake
+# before dialling the backend, so a TCP check against a forwarded port reads
+# green forever even when nothing is listening behind it (F-027).
+
+endpoints:
+  - name: gatus (self)
+    group: internal
+    url: "http://localhost:8080/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: signoz (direct)
+    group: internal
+    url: "http://host.docker.internal:8080/api/v1/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == ok"
+
+  - name: komodo (direct)
+    group: internal
+    url: "http://host.docker.internal:9120/"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: excel-to-report (direct)
+    group: internal
+    url: "http://host.docker.internal:9022/"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"

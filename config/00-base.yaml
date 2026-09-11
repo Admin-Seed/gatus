@@ -1,0 +1,26 @@
+# Base configuration. GATUS_CONFIG_PATH=/config, so every *.yaml in this
+# directory is merged: maps are deep-merged, lists are appended. Endpoints are
+# therefore split across the endpoints-*.yaml files.
+
+storage:
+  type: sqlite
+  path: /data/data.db
+  caching: true
+  maximum-number-of-results: 100
+  maximum-number-of-events: 50
+
+# This config is deployed from git. If a bad commit lands, keep serving the last
+# good configuration instead of falling over.
+skip-invalid-config-update: true
+
+ui:
+  title: "Status | seed infrastructure"
+  description: "Health of the services on seed-vm-services-eastus"
+  header: "seed infrastructure"
+
+# Protects the status data (/api/v1/endpoints/statuses and friends).
+# Badges and the raw uptime/response-time endpoints stay public by design.
+security:
+  basic:
+    username: admin
+    password-bcrypt-base64: ${GATUS_BASIC_AUTH_B64}

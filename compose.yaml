@@ -1,0 +1,52 @@
+# Gatus — status monitoring for seed-vm-services-eastus.
+#
+# Published at https://uptime.seedaps.com through the Cloudflare Tunnel, and on
+# the Azure VNet at http://172.17.0.4:3001.
+#
+# Host port 3001 is deliberate and load-bearing: it is the port the tunnel's
+# ingress rule and the netsh portproxy forwarder already point at, inherited
+# from Uptime Kuma. Changing it means editing both.
+name: gatus
+
+services:
+  gatus:
+    image: ghcr.io/twin/gatus:v5.36.0
+    container_name: gatus
+    restart: unless-stopped
+
+    # NOTE: no healthcheck. The image is FROM scratch — it contains the static
+    # binary, a CA bundle and the default config, and nothing else. There is no
+    # shell and no wget, so every form of Docker healthcheck fails to exec and
+    # reports "unhealthy" forever. Gatus monitors its own /health instead; see
+    # config/endpoints-internal.yaml.
+
+    environment:
+      GATUS_CONFIG_PATH: /config
+      GATUS_LOG_LEVEL: INFO
+      # Supplied by the Komodo stack environment, never committed here.
+      GATUS_BASIC_AUTH_B64: ${GATUS_BASIC_AUTH_B64:?missing — set it in the Komodo stack environment}
+
+    ports:
+      - "3001:8080"
+
+    # Lets the internal checks reach services published on the WSL host without
+    # hardcoding a bridge gateway address that changes when networks are rebuilt.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      - ./config:/config:ro
+      - gatus-data:/data
+
+    security_opt:
+      - no-new-privileges:true
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+volumes:
+  gatus-data:
+    name: gatus-data

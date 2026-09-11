@@ -1,0 +1,36 @@
+# End-to-end checks through the full public path:
+#   Cloudflare edge -> tunnel 7f851ded -> cloudflared -> the service.
+# These are the highest-value checks here, because they exercise DNS, the
+# Cloudflare Tunnel and the origin in one go.
+
+endpoints:
+  - name: signoz
+    group: public
+    url: "https://signoz.seedaps.com/api/v1/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == ok"
+      - "[CERTIFICATE_EXPIRATION] > 240h"
+
+  - name: n8n
+    group: public
+    url: "https://n8n.seedaps.com/healthz"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == ok"
+
+  - name: excel-to-report
+    group: public
+    url: "https://excel-to-report.seedaps.com/"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: gatus (this page, via the tunnel)
+    group: public
+    url: "https://uptime.seedaps.com/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
