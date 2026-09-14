@@ -12,36 +12,32 @@ Deployed by Komodo as the stack `gatus`. It replaced Uptime Kuma on 2026-09-11.
 | VNet | `http://172.17.0.4:3001` — `netsh portproxy` |
 | Image | `ghcr.io/twin/gatus:v5.36.0` |
 
-## Two instances, two audiences
+## One instance, internal audience
 
-Gatus has **no per-endpoint visibility control** — a dashboard is either wholly
-public or wholly behind auth. So there are two stacks, from this one repository:
+A single board at <https://uptime.seedaps.com>, behind HTTP basic auth and
+reached through the Cloudflare Tunnel. There is no public status page.
 
-| | Internal | Public |
-| --- | --- | --- |
-| Compose | `compose.yaml` | `compose.public.yaml` |
-| Config | `config/` | `config-public/` (mounted as `/repo/config-public`) |
-| Host port | `3001` | `3002` |
-| URL | <https://uptime.seedaps.com> | <https://status.seedaps.com> |
-| Auth | basic auth | **none — customers read this** |
-| Contents | infrastructure, hosts, ports | customer-facing services only |
+There was one — an unauthenticated `gatus-public` stack on port 3002 at
+`status.seedaps.com`, with `compose.public.yaml` and a `config-public/`
+directory. It was **retired on 2026-09-14**. `git log` has the whole thing if it
+is ever wanted back; `git revert` of that commit restores the compose file, the
+config directory and the symlink in one step.
 
-**Anything you put in `config-public/` is public.** No hostnames, ports or
-service names that you would not hand to a customer.
+Its DNS record was deliberately **kept** while the tunnel ingress rule was
+removed, so the hostname returns the tunnel's clean `404` instead of falling
+through to the `*.seedaps.com` wildcard and landing on an unrelated Azure App
+Service. That is a standing rule here, not a one-off — see ADR-0009 in the
+infrastructure documentation.
 
-Branding is not duplicated. `config-public/01-ui.yaml` is a **git symlink** to
-`../config/01-ui.yaml`, and `compose.public.yaml` mounts the **whole repository**
-read-only at `/repo` with `GATUS_CONFIG_PATH=/repo/config-public`. A relative
-symlink only resolves if both directories sit inside the same mount, which is
-why the mount is the repo root rather than a single directory.
+## Groups
 
-**Do not "simplify" this into a single-file bind mount.** It was written that
-way first — `./config-public:/config` plus `./config/01-ui.yaml:/config/01-ui.yaml`
-— and it silently broke on the next deploy. A single-file bind mount binds an
-*inode*, and `git pull` replaces files rather than editing them in place, so the
-container carried on serving the original file forever. The symptom is precise
-and easy to miss: directory-mounted endpoint files update normally while the
-branding stays frozen at whatever it was when the container started.
+| Group | What it covers |
+| --- | --- |
+| `seed` | 33 tenants on the shared multi-tenant application |
+| `coortex` | Coortex production environments |
+| `coortex dev` | their development counterparts |
+| `infrastructure` | n8n, SigNoz, the Azure SQL gateway |
+| `internal` | services reached directly on the Docker host, plus the admin portal |
 
 ## Write conditions against the body, not the status
 
@@ -51,10 +47,25 @@ The `seedaps.com` zone carries a wildcard, `*.seedaps.com` pointing at an
 unrelated Azure App Service. **Every name under it resolves and answers `200`,**
 whether or not the tunnel routes it — so `[STATUS] == 200` proves nothing.
 
-This is not theoretical. On 2026-09-11 the check for `status.seedaps.com`
-passed a status-only condition **before its DNS record or ingress rule
-existed**. Two invented hostnames returned the same `200`, and the same
-`401 {"Message": ""}` on `/api/health`, as the real ones.
+This is not theoretical, and it has bitten twice.
+
+On 2026-09-11 a check for `status.seedaps.com` passed a status-only condition
+**before its DNS record or ingress rule existed**. Two invented hostnames
+returned the same `200`, and the same `401 {"Message": ""}` on `/api/health`, as
+the real ones.
+
+On 2026-09-14 it turned out **`*.coortex.com` is a wildcard too**, and its
+`/health` answers `Healthy` for *any* hostname —
+`zzz-nope-7712.coortex.com/health` included. Checks that asserted
+`[BODY] == Healthy` there looked rigorous and proved only that the shared
+platform was alive. The coortex endpoints now check the **root** and assert on
+the page title, because an unconfigured host 404s there.
+
+For the `seed` tenants the discriminator is inverted: every hostname under
+`seedaps.com` renders a login page, but an **unconfigured** one shows
+`Endere&#231;o de empresa inexistente.`, so the condition is
+`[BODY] != pat(*inexistente*)`. Verified across all 33 tenants and four invented
+controls.
 
 So:
 

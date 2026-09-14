@@ -1,0 +1,401 @@
+# Seed tenants on the shared multi-tenant application.
+#
+# READ THIS BEFORE CHANGING A CONDITION.
+#
+# Every one of these is a hostname under seedaps.com, and the zone carries a
+# wildcard (F-052): a name that does NOT exist still resolves, still returns
+# 200, and still renders a login page. `[STATUS] == 200` therefore proves
+# nothing at all here -- it would stay green for a tenant that had been deleted,
+# or for a hostname with a typo in it.
+#
+# What does discriminate: an unconfigured hostname renders
+# "Endere&#231;o de empresa inexistente." inside an `alert-danger` box, and a
+# configured tenant never does. Measured 2026-09-14 across all 33 tenants and
+# four invented control hostnames:
+#
+#     "inexistente"   0/33 tenants   4/4 controls
+#     "alert-danger"  0/33 tenants   4/4 controls
+#
+# Positive markers do NOT work -- seed_logo.png, azureClientID, logoFileName and
+# wallpaperFileName all appear in the control pages too. Body hashing does not
+# work either: the page carries per-request anti-forgery tokens, so two fetches
+# of the same host differ.
+#
+# Hence the negative assertion below. It is the only thing standing between this
+# group and 33 green lights that mean nothing.
+#
+# Interval is 2m rather than 60s: these are 33 checks against one shared App
+# Service. The certificate condition is on every entry because they share one
+# wildcard certificate -- if it lapses, 33 red is the correct answer.
+#
+# client.timeout is raised to 30s from the 10s default. On the first validation
+# pass three tenants (focus-sp, inplavel, kingspan-anapolis) failed with
+# "context deadline exceeded ... while awaiting headers" while a direct probe
+# showed them healthy with a valid certificate. All 33 hit the same App Service
+# at the same instant, and it is slow on cold paths. 10s produced false alarms;
+# 30s does not. If these start timing out at 30s, that is a real performance
+# problem rather than a monitoring artefact.
+
+endpoints:
+  - name: bblend
+    group: seed
+    url: "https://bblend.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: chromo
+    group: seed
+    url: "https://chromo.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: cpack
+    group: seed
+    url: "https://cpack.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: csnpr
+    group: seed
+    url: "https://csnpr.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: csnupv
+    group: seed
+    url: "https://csnupv.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: erbs
+    group: seed
+    url: "https://erbs.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: etical
+    group: seed
+    url: "https://etical.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: focus-f4
+    group: seed
+    url: "https://focus-f4.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: focus-sp
+    group: seed
+    url: "https://focus-sp.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: focussul
+    group: seed
+    url: "https://focussul.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: grano
+    group: seed
+    url: "https://grano.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: imply
+    group: seed
+    url: "https://imply.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: inplavel
+    group: seed
+    url: "https://inplavel.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: isacteep
+    group: seed
+    url: "https://isacteep.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: kingspan-anapolis
+    group: seed
+    url: "https://kingspan-anapolis.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: kingspan-araquari
+    group: seed
+    url: "https://kingspan-araquari.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: kingspan-cambui
+    group: seed
+    url: "https://kingspan-cambui.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: kingspan-leme
+    group: seed
+    url: "https://kingspan-leme.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: kingspan-varzeagrande
+    group: seed
+    url: "https://kingspan-varzeagrande.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: kingspan-vitoriadesantoantao
+    group: seed
+    url: "https://kingspan-vitoriadesantoantao.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: liner
+    group: seed
+    url: "https://liner.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: linkplas
+    group: seed
+    url: "https://linkplas.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: liotecnica
+    group: seed
+    url: "https://liotecnica.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: medal
+    group: seed
+    url: "https://medal.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: nokianpanimo
+    group: seed
+    url: "https://nokianpanimo.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: prada
+    group: seed
+    url: "https://prada.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: pradaembalagens
+    group: seed
+    url: "https://pradaembalagens.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: sintex
+    group: seed
+    url: "https://sintex.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: sintex-producao
+    group: seed
+    url: "https://sintex-producao.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: supley
+    group: seed
+    url: "https://supley.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: taf
+    group: seed
+    url: "https://taf.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: teste-cpack
+    group: seed
+    url: "https://teste-cpack.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: vale-dipe
+    group: seed
+    url: "https://vale-dipe.seedaps.com/"
+    interval: 2m
+    client:
+      timeout: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] != pat(*inexistente*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"

@@ -1,0 +1,73 @@
+# Coortex environments.
+#
+# These check the ROOT, deliberately, and NOT /health.
+#
+# `*.coortex.com` and `*.dev.coortex.com` are wildcards, and their /health
+# answers "Healthy" for ANY hostname -- verified 2026-09-14:
+# zzz-nope-7712.coortex.com/health returns Healthy exactly like the real hosts.
+# A /health check here proves the shared platform is alive, not that this
+# particular environment exists.
+#
+# The root does discriminate: a configured host returns 200 with the
+# "Seed APS - Advanced Planning & Scheduling" title, an unconfigured one
+# returns 404. That is what these assert.
+#
+# (An earlier revision of the retired public status page asserted
+# `[BODY] == Healthy` here and claimed it distinguished a live service from the
+# wildcard. For *.coortex.com it did not.)
+
+endpoints:
+  - name: csnupv
+    group: coortex
+    url: "https://csnupv.coortex.com/"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*Seed APS*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: tutorial-mesas
+    group: coortex
+    url: "https://tutorial-mesas.coortex.com/"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*Seed APS*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  # Lives under seedaps.com but belongs to this group.
+  - name: planejamento csn
+    group: coortex
+    url: "https://planejamento.csn.seedaps.com/"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*Seed APS*)"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  # ------------------------------------------------------------------ dev
+  - name: csnupv
+    group: coortex dev
+    url: "https://csnupv.dev.coortex.com/"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*Seed APS*)"
+
+  # NOTE: "tutorial-meses" was requested, but that hostname returns 404 and does
+  # not exist; "tutorial-mesas" is the environment that is actually deployed.
+  - name: tutorial-mesas
+    group: coortex dev
+    url: "https://tutorial-mesas.dev.coortex.com/"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*Seed APS*)"
+
+  - name: planejamento csn
+    group: coortex dev
+    url: "https://planejamento.csn.dev.seedaps.com/"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*Seed APS*)"
