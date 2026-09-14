@@ -1,11 +1,18 @@
-# Everything under `ui:` lives in this one file, shared by BOTH boards:
-# compose.public.yaml bind-mounts it over the placeholder in config-public/, so
-# branding has exactly one source.
+# Shared branding for BOTH boards. config-public/01-ui.yaml is a git symlink to
+# this file, and compose.public.yaml mounts the repository root, so there is
+# exactly one definition of the logos, theme and favicon.
 #
 # `logo:` is deliberately NOT set. Gatus renders a single logo URL with no way
 # to vary it by theme, and there are two marks -- black for light, white for
 # dark. Both are inlined in custom-css as background-images instead, which also
-# keeps the status page free of any third-party request on load.
+# keeps the pages free of any third-party request on load.
+#
+# `favicon:` below is the opposite case, and the asymmetry is not a mistake.
+# Gatus renders it into an HTML href, where Go's html/template rejects the
+# `data:` scheme outright and substitutes the sentinel `#ZgotmplZ`, so the icon
+# silently disappears. Only http(s) and relative URLs survive there. `ui.logo`
+# escapes that filter only because it lands in a JavaScript string literal.
+# See brand/README.md.
 
 ui:
   title: "Status | Seed APS"
@@ -16,6 +23,21 @@ ui:
   link: "https://seed.com.br"
   dark-mode: true
   default-sort-by: group
+
+  # Served from raw.githubusercontent.com out of brand/ in this repository.
+  # A third party, but not a new one -- Komodo already pulls this repo from
+  # GitHub to deploy at all -- and a favicon that fails to load is cosmetic,
+  # unlike the header logo. To make it first-party, host brand/* on seed.com.br
+  # and change these three URLs.
+  #
+  # NOTE the mark is white on transparent, so it does not show against the light
+  # tab bar most browsers use in light mode. Inherent to the asset; a variant
+  # with a solid background would be needed to show in both.
+  favicon:
+    default: "https://raw.githubusercontent.com/Admin-Seed/gatus/main/brand/favicon-32.png"
+    size16x16: "https://raw.githubusercontent.com/Admin-Seed/gatus/main/brand/favicon-16.png"
+    size32x32: "https://raw.githubusercontent.com/Admin-Seed/gatus/main/brand/favicon-32.png"
+
   custom-css: |
     /* Seed APS theme.
      *
