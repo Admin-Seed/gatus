@@ -1,26 +1,24 @@
-# Services reached directly on the Docker host, plus the admin portal.
+# The board itself, and the admin portal.
 #
-# Deliberately HTTP, never tcp://. netsh portproxy completes the TCP handshake
-# before dialling the backend, so a TCP check against a forwarded port reads
-# green forever even when nothing is listening behind it (F-027).
+# The komodo and signoz direct checks were removed on 2026-09-14: both services
+# are already covered from the outside in the `infrastructure` group, and the
+# duplicate direct path was not earning its place on the board.
 
 endpoints:
-  - name: signoz (direct)
+  # Gatus watching its own /health, over loopback inside its own container.
+  #
+  # This is a liveness check of the process, not of the path users take to reach
+  # it -- if the tunnel or Cloudflare breaks, this stays green while the board is
+  # unreachable. Nothing watches it from outside the VM (F-039).
+  - name: gatus (self)
     group: internal
-    url: "http://host.docker.internal:8080/api/v1/health"
+    url: "http://localhost:8080/health"
     interval: 60s
     conditions:
       - "[STATUS] == 200"
-      - "[BODY].status == ok"
+      - "[BODY].status == UP"
 
-  - name: komodo (direct)
-    group: internal
-    url: "http://host.docker.internal:9120/"
-    interval: 60s
-    conditions:
-      - "[STATUS] == 200"
-
-  # Distinct application from the tenant login app -- its own title, and no
+  # A distinct application from the tenant login app -- its own title, and no
   # /health endpoint (that path 404s). The title assertion is what separates it
   # from a wildcard hit under seedaps.com.
   - name: portal admin
