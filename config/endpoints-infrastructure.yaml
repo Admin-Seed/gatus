@@ -1,25 +1,11 @@
-# Platform services, checked end to end through Cloudflare, plus the database
-# gateway.
+# Infrastructure that is not an HTTP service of this host.
+#
+# n8n and signoz moved to `internal` on 2026-09-14, leaving this group holding
+# the database gateway alone. Kept as its own group rather than folded in,
+# because it is the one check here that is neither an application on this host
+# nor a customer environment.
 
 endpoints:
-  - name: n8n
-    group: infrastructure
-    url: "https://n8n.seedaps.com/healthz"
-    interval: 60s
-    conditions:
-      - "[STATUS] == 200"
-      - "[BODY].status == ok"
-      - "[CERTIFICATE_EXPIRATION] > 240h"
-
-  - name: signoz
-    group: infrastructure
-    url: "https://signoz.seedaps.com/api/v1/health"
-    interval: 60s
-    conditions:
-      - "[STATUS] == 200"
-      - "[BODY].status == ok"
-      - "[CERTIFICATE_EXPIRATION] > 240h"
-
   # Azure SQL -- the WebJob's production database.
   #
   # Gatus has no database endpoint type, so this is a TLS handshake against the
